@@ -12,6 +12,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/sirupsen/logrus"
 	"github.com/zserge/lorca"
 )
 
@@ -29,12 +30,12 @@ var (
 func init() {
 	curved = make(chan *CurveD, 3)
 
-	flag.StringVar(&delimiter, "d", ",", "-d ,  \ndata delimiter")
-	flag.StringVar(&typ, "t", "timeline", "-t timeline  \nnote: chart type")
+	flag.StringVar(&delimiter, "d", " ", "-d ,  \ndata delimiter")
+	flag.StringVar(&typ, "t", "timeline", "-t line  \nnote: chart type")
 }
 
 func app() {
-	ui, err := lorca.New("", "", 350, 240)
+	ui, err := lorca.New("", "", 2200, 1200)
 	if err != nil {
 		panic(err)
 	}
@@ -48,8 +49,9 @@ func app() {
 	}
 	defer ln.Close()
 
-	go http.Serve(ln, http.FileServer(FS))
-	// go http.Serve(ln, http.FileServer(http.Dir("./")))
+	// go http.Serve(ln, http.FileServer(FS))
+	go http.Serve(ln, http.FileServer(http.Dir("./tpl")))
+	fmt.Println(ln.Addr())
 	ui.Load(fmt.Sprintf("http://%s", ln.Addr()))
 
 	sigc := make(chan os.Signal)
@@ -86,6 +88,10 @@ func parseData(input []byte) {
 		parseLineData(input)
 		return
 	}
+	if typ == "timeline" {
+		parseTimeLineJsonData(input)
+		return
+	}
 }
 
 func parseLineData(input []byte) {
@@ -94,7 +100,7 @@ func parseLineData(input []byte) {
 	for _, it := range datas {
 		v, err := strconv.ParseFloat(strings.Trim(it, "\n"), 64)
 		if err != nil {
-			fmt.Println(err)
+			logrus.Error(err)
 			continue
 		}
 		data = append(data, v)
@@ -111,8 +117,26 @@ func parseLineData(input []byte) {
 	}
 }
 
-func parseTimeLineJsonData(input []byte) {
+type Tline struct {
+	T int64
+	D float64
+}
 
+func parseTimeLineJsonData(input []byte) {
+	metrics, err := decodeTimeDatas(input)
+	if err != nil {
+		panic(err)
+	}
+	data := parseTimeData(metrics)
+
+	curved <- &CurveD{
+		Type:   "timeline",
+		Title:  "title",
+		Data:   data,
+		Avg:    0.0,
+		PosAvg: 0.0,
+		NegAvg: 0.0,
+	}
 }
 
 type CurveD struct {
@@ -133,6 +157,5 @@ func Curve() string {
 	if err != nil {
 		return err.Error()
 	}
-	fmt.Fprintf(os.Stdout, "%s\n", bs)
 	return string(bs)
 }
