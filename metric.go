@@ -29,6 +29,22 @@ func parseTimeData(data ...[]TimeData) interface{} {
 
 func decodeTimeDatas(input []byte) ([]TimeData, error) {
 	ret := []TimeData{}
-	err := json.Unmarshal(input, &ret)
+	var raw []map[string]float64
+	err := json.Unmarshal(input, &raw)
+	if err != nil {
+		return nil, err
+	}
+	key := ""
+	for k, _ := range raw[0] {
+		if k != "timestamp" {
+			key = k
+		}
+	}
+	for _, it := range raw {
+		ret = append(ret, TimeData{
+			Timestamp: int64(it["timestamp"]),
+			Value:     it[key],
+		})
+	}
 	return ret, err
 }
