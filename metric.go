@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"sort"
 	"time"
+
+	"github.com/sirupsen/logrus"
 )
 
 type TimeData struct {
@@ -40,6 +42,7 @@ func decodeTimeDatas(input []byte) ([]TimeData, error) {
 			key = k
 		}
 	}
+	logrus.Infof("metric: %s", key)
 	for _, it := range raw {
 		ret = append(ret, TimeData{
 			Timestamp: int64(it["timestamp"]),

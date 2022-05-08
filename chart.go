@@ -25,6 +25,7 @@ var (
 	curved    chan *CurveD
 	delimiter string
 	typ       string
+	emb       bool
 )
 
 func init() {
@@ -32,6 +33,7 @@ func init() {
 
 	flag.StringVar(&delimiter, "d", " ", "-d ,  \ndata delimiter")
 	flag.StringVar(&typ, "t", "timeline", "-t line  \nnote: chart type")
+	flag.BoolVar(&emb, "e", false, "-e  generate embed files")
 }
 
 func app() {
@@ -49,8 +51,8 @@ func app() {
 	}
 	defer ln.Close()
 
-	// go http.Serve(ln, http.FileServer(FS))
-	go http.Serve(ln, http.FileServer(http.Dir("./tpl")))
+	go http.Serve(ln, http.FileServer(FS))
+	// go http.Serve(ln, http.FileServer(http.Dir("./tpl")))
 	fmt.Println(ln.Addr())
 	ui.Load(fmt.Sprintf("http://%s", ln.Addr()))
 
@@ -64,6 +66,10 @@ func app() {
 
 func main() {
 	flag.Parse()
+	if emb {
+		embed()
+		return
+	}
 	//先取程序的标准输入属性信息
 	info, err := os.Stdin.Stat()
 	if err != nil {

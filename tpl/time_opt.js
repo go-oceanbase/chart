@@ -45,10 +45,8 @@ function setTimeAxisData(data) {
       {
         name: 'Data',
         type: 'line',
-        // type: 'bar',
         // smooth: true,
-        symbol: 'none',
-        areaStyle: {},
+        showSymbol: false,
         data: data
       }
     ]
